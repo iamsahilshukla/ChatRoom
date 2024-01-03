@@ -1,0 +1,94 @@
+<!--index.html file-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>LearnAPP ChatRoom</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="logo">LearnAPP ChatRoom</h1>
+    <form class="form" id="form">
+      <input class="input" type="text" placeholder="Name" id="myname">
+      <input class="input" type="text" placeholder="Message" id="message">
+      <button class="button">Send Message</button>
+    </form>
+    <div class="messageArea" id="messageArea"></div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"
+    integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs"
+    crossorigin="anonymous"></script>
+  <!-- <script src = 'script.js'></script> -->
+  <script>
+
+    let socket = io('http://leanapp-chat.ap-south-1.elasticbeanstalk.com');
+    // let socket = io('http://localhost:3000')
+
+    let form = document.getElementById('form');
+    let myname = document.getElementById('myname');
+    let message = document.getElementById('message');
+    let messageArea = document.getElementById('messageArea');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      if (message.value) {
+        socket.emit('send name', myname.value);
+        socket.emit('send message', message.value);
+        message.value = '';
+      }
+    });
+
+    socket.on('connect', (data) => {
+      console.log("Connected");
+    })
+
+    socket.on('send name', (username) => {
+      let name = document.createElement('p');
+      name.classList.add('message');
+      name.innerHTML = `<span class="username">${username}:</span>`;
+      messageArea.appendChild(name);
+    });
+    
+    // socket.on('broadcastLatency',(startTime)=>{
+    //   const endTime = new Date().getTime();
+    //   const duration = endTime - startTime;
+    //   console.log('server to client time',duration);
+    // })
+
+    socket.on('broadcast', (chat,startTime) => {
+      socket.emit('ack', 'recieved');
+      const time = new Date().getTime();
+      console.log('total time taken from admin to clients',time-startTime);
+      let name = document.createElement('p');
+      let username = "Admin"
+      name.classList.add('message');
+      name.innerHTML = `<span class="username">${username}:</span>`;
+      messageArea.appendChild(name);
+
+      let chatContent = document.createElement('p');
+      chatContent.classList.add('message');
+      chatContent.textContent = chat;
+      messageArea.appendChild(chatContent);
+    });
+
+    socket.on('send message', (chat) => {
+      let chatContent = document.createElement('p');
+      chatContent.classList.add('message');
+      chatContent.textContent = chat;
+      messageArea.appendChild(chatContent);
+    });
+
+    socket.on('pong', function (counter) {
+      const time = new Date().getTime();
+      console.log(`Client Time for User_${counter}`, time);
+    });
+
+  </script>
+</body>
+
+</html>
